@@ -7,11 +7,12 @@
 
 ## 初回デプロイ
 
-1. `lakebase-workshop`のsource folderを別に複製し、複製先の`app.yaml`を
-   `app.manual.yaml`の内容で置き換えます。
-2. 置き換えた`app.yaml`が直下にあるfolderをWorkspaceへアップロードします。
+1. [標準版ガイド](participant-install-guide.ja.md)の手順で、公開リポジトリを
+   Git folderとして追加します。
+2. Git folder内の`lakebase-workshop/app.yaml`を開き、内容を`app.manual.yaml`の
+   内容で置き換えて保存します。この変更はGitへ反映しません。
 3. Databricks Appsで新しいAppを作成します。
-4. **Deploy**でアップロードしたfolderを選択します。
+4. **Deploy**でGit folder内の`lakebase-workshop`フォルダを選択します。
 5. Appを開き、黄色の`デモモード`と`[DEMO]`で始まる3件を確認します。
 6. App詳細画面でservice principalのClient ID（App ID）を確認します。
 

@@ -9,6 +9,7 @@
 
 - Databricks Appを作成する
 - 講師が用意した`production`（master）から自分のbranchを作成する（テーブル・データはコピーされる）
+- 自分のbranchに自分のロールを作成し、SQL Editorでクエリする
 - 自分のブランチにApp用のロールを作成する
 - AppsのResourcesからDatabaseを追加する
 - AppをデプロイしてLakebaseへ接続する
@@ -19,14 +20,18 @@
 ## Databricks UI からインストールする
 
 1. Databricks workspace を開きます。
-2. このリポジトリをdownloadまたはcloneし、`lakebase-workshop`フォルダを開きます。
-3. Databricksの**Workspace**を開き、`lakebase-workshop`の中身を次のような
-   workspace folderへアップロードします。
+2. **Workspace**で**Create**→**Git folder**を選び、Repository URLに
+   `https://github.com/databricks-solutions/databricks-japan-bootcamp.git`、
+   Git providerに`GitHub`を指定します。
+3. **Advanced**で**Sparse checkout mode**を有効にし、Cone patternsへ
+   `lakebase-workshop`を入力して作成します。他のワークショップのdirectoryは取得されません。
 
-   `/Workspace/Users/<your-email>/lakebase-workshop-app`
+   作成したGit folder内の`lakebase-workshop`フォルダが、Appのsource folderになります。
 
-   このfolderの直下に`app.yaml`、`app.py`、`pyproject.toml`、`static/`が
-   見える状態にしてください。
+   `/Workspace/Users/<your-email>/databricks-japan-bootcamp/lakebase-workshop`
+
+   このfolderの直下に`app.yaml`、`app.py`、`requirements.txt`、`static/`が
+   見える状態であることを確認してください。
 
 4. 画面右上のアプリスイッチャーから **Databricks アプリ（Apps）** を開きます。
 5. 新しいAppを作成します。この時点ではまだデプロイしません。
@@ -39,6 +44,20 @@
 3. `production` branchから新しいbranchを作成します。
 4. branch名に自分の名前を入力し、Auto-deleteを`After 1 day`にします。
 5. branchとendpointが作成されるまで待ちます。
+
+## SQL Editorでクエリする
+
+SQL Editorは、あなた自身のPostgres roleで接続します。作成したばかりのbranchには
+あなたのroleがないため、先に追加します。
+
+1. 自分のbranchで**Roles & Databases**→**Add role**を選びます。
+2. **Principal**に自分の名前かメールアドレスを入力し、候補から自分を選びます。
+3. **System roles**の`databricks_superuser`にチェックを入れ、**Add**をクリックします。
+4. 自分のbranchで**SQL Editor**を開き、`SELECT * FROM tickets;`などを実行します。
+
+候補の自分がグレーで選べない場合は、roleがすでにあります。一覧の自分のroleの「⋮」→
+**Edit role**で`databricks_superuser`にチェックを入れて保存します。`production` branchにはroleを追加しないで
+ください。
 
 ## Appのroleを自分のbranchへ作成する
 
@@ -72,11 +91,11 @@ roleは必ず自分のbranchに作成し、`production`には作成しません�
 ## Appをデプロイする
 
 1. App詳細画面で**Deploy**をクリックします。
-2. Source folderの選択画面で、アップロードしたworkspace folderを選びます。
+2. Source folderの選択画面で、Git folder内の`lakebase-workshop`フォルダを選びます。
 
    例:
 
-   `/Workspace/Users/<your-email>/lakebase-workshop-app`
+   `/Workspace/Users/<your-email>/databricks-japan-bootcamp/lakebase-workshop`
 
    ここで選ぶ folder は、開いたときに `app.yaml` が直下にある folder です。
    `static/`の内側ではありません。
@@ -110,8 +129,8 @@ database です。このワークショップでは参加者が database を作�
 
 ## フォールバック: 手動接続方式
 
-Database resourceを選択できない環境では、source folderを別に複製して
-`app.manual.yaml`を`app.yaml`として使用します。この構成はSQLite demo modeで
+Database resourceを選択できない環境では、`app.manual.yaml`の内容を`app.yaml`へ
+書き写して使用します。この構成はSQLite demo modeで
 初回起動でき、従来どおり次の2変数で接続できます。完全な手順は
 [手動接続版ガイド](participant-install-guide.manual.ja.md)を参照してください。
 
@@ -146,30 +165,15 @@ env:
 ## アプリコードを更新する
 
 source codeを更新する場合は、Databricks AppやLakebaseは削除しません。
-Workspace上のsource folderだけを入れ替えて、既存Appを再デプロイします。
+Git folderを最新版へ更新して、既存Appを再デプロイします。
 
-1. Databricks の **Workspace** を開きます。
-2. 既存の source folder を削除します。
-
-   例:
-
-   `/Workspace/Users/<your-email>/lakebase-workshop-app`
-
-3. リポジトリの最新版をdownloadまたはcloneします。
-4. 新しい`lakebase-workshop`の中身を同じ場所へアップロードし、folder名が
-   前と同じであることを確認します。
-
-   例:
-
-   `/Workspace/Users/<your-email>/lakebase-workshop-app`
-
-5. folderの直下に`app.yaml`、`app.py`、`pyproject.toml`、`static/`、`sql/`があることを確認します。
-6. Databricks Apps で既存 App を開きます。
-7. **Deploy** をクリックし、同じ source folder を選んで再デプロイします。
-
-削除してよいもの:
-
-- Workspace 上の source folder
+1. Databricks の **Workspace** でGit folderを開きます。
+2. Git操作の画面で**Pull**を実行し、最新版を取得します。講師が使う版を
+   指定している場合は、その版に合わせます。
+3. `lakebase-workshop`フォルダの直下に`app.yaml`、`app.py`、`requirements.txt`、
+   `static/`、`sql/`があることを確認します。
+4. Databricks Apps で既存 App を開きます。
+5. **Deploy** をクリックし、同じ`lakebase-workshop`フォルダを選んで再デプロイします。
 
 削除しないもの:
 
@@ -186,10 +190,10 @@ App は残したまま再デプロイしてください。
 - `app.py`: application server
 - `app.yaml`: Add resource方式のDatabricks Apps config
 - `app.manual.yaml`: 手動接続方式のフォールバックconfig
-- `pyproject.toml`と`uv.lock`: 固定されたPython runtime依存関係
+- `requirements.txt`: Databricks Appsが導入するPython runtime依存関係
+- `pyproject.toml`と`uv.lock`: ローカル検証用に固定したPython依存関係
 - `static/`: browser UI
 - `sql/`: ワークショップ用の参考 schema / seed files
 - `notebooks/participant_connect_helper.py`: 手動接続用の診断helper
-
-公開版にはLakebaseの作成、setup、cleanup、workspace固有のdeployment scriptは
-含まれていません。
+- `notebooks/facilitator_setup.py`、`notebooks/facilitator_cleanup.py`: 講師用の環境作成・削除notebook。
+  参加者は実行しません

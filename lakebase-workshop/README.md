@@ -19,21 +19,89 @@ commentを更新し、自分のbranchだけに変更が反映されることを�
 ワークショップ環境はDatabricks workspace上のnotebookだけで準備できます。ローカルの
 Databricks CLI、jq、psqlは不要です。
 
-1. `notebooks/facilitator_setup.py`と`notebooks/facilitator_cleanup.py`をworkspaceへ
-   importします。
-2. `facilitator_setup`を一度Run allし、表示されたwidgetへ参加者数、project接頭辞、
-   参加者グループ、権限モードを入力します。初回のRun allは確認だけで、環境を変更しません。
-3. `5. 実行確認`を`環境構築を実行`へ変更して、もう一度Run allします。参加者8名ごとに
+### 事前準備
+
+1. LakebaseとDatabricks Appsを利用できるserverless workspaceを用意します。
+2. 参加者専用のworkspace groupを作成し、参加者を追加します。groupはsetup notebookの
+   実行前に存在している必要があります。顧客環境では`users`ではなく専用groupを使います。
+3. Workspaceで**Create**→**Git folder**を選び、Repository URLに
+   `https://github.com/databricks-solutions/databricks-japan-bootcamp.git`、Git providerに
+   `GitHub`を指定します。
+   **Advanced**で**Sparse checkout mode**を有効にし、Cone patternsへ`lakebase-workshop`を
+   入力して作成します。
+4. Git folder内の`lakebase-workshop/notebooks/facilitator_setup`を開いて一度Run allし、
+   表示されたwidgetへ参加者数、project接頭辞、参加者グループ、権限モードを入力します。
+   初回のRun allは確認だけで、環境を変更しません。
+5. `5. 実行確認`を`環境構築を実行`へ変更して、もう一度Run allします。参加者8名ごとに
    master projectを作成し、schemaとsample dataの投入、`production` branchのprotected化、
-   参加者グループへの権限付与を行います。
-4. 最後に出力される参加者割り当て表を参加者へ配布します。開始前に、代表参加者で
-   branchを作成できることを確認してください。
-5. 終了後は`facilitator_cleanup`を実行します。初回は削除対象の一覧だけを表示し、
-   `2. 削除確認`へproject接頭辞を再入力した場合だけprojectを完全に削除します。
-   削除は取り消せません。
+   参加者グループへの権限付与と、付与した権限のAPIでの再確認を行います。
+6. 最後に出力される参加者割り当て表をもとに、参加者の氏名、master project、
+   branch名の対応表を配布します。
 
 1つのprojectでunarchivedのbranchは最大10本です。setup notebookは講師確認用を含めて
-1 projectあたり9本以内に収まるよう、参加者を8名ずつ分割します。
+1 projectあたり9本以内に収まるよう、参加者を8名ずつ分割します（30名なら8／8／8／6名）。
+
+### 開始前の権限確認
+
+標準の`can_manage`モードでは参加者が自分でbranchを作成するため、開始前に次の3点を
+すべて確認します。
+
+1. setup notebookの出力に、projectごとの`[verify] ... CAN_MANAGE (direct)`がある。
+2. projectのPermissions画面で、参加者専用groupの権限が`CAN MANAGE`になっている。
+   `CAN CREATE (Inherited)`だけの場合は開始しません。
+3. 代表参加者または参加者相当のテストアカウントで、`production`からTTL付きbranchを
+   1本作成できる。さらにそのbranchへ本人のroleを追加し、SQL Editorでクエリできる。
+   確認用branchは確認後に削除します。
+
+`CAN MANAGE`を確認できない場合は、継承された権限を変更せず、setup notebookを再実行して
+参加者専用groupへ明示的に付与し、上の3点を確認し直します。`precreate`モードでは、
+branch作成の代わりに、代表参加者が割り当て済みbranchを選択できることを確認します。
+
+### 参加者本人のrole（SQL Editor）
+
+SQL Editorは参加者本人のPostgres roleで接続します。branchは`production`のroleを
+引き継ぎますが、`production`にあるのは講師とtable所有用のroleだけです。そのため、
+参加者が作ったbranchには本人のroleがなく、そのままではSQL Editorを使えません。
+
+SQL Editorのハンズオンの最初に、参加者が自分のbranchの**Roles & Databases**→
+**Add role**で、**Principal**に本人を選び、`databricks_superuser`にチェックして追加します。Appのroleとは別に必要です。
+superuserを付けるのは本人のTTL付きbranchだけにし、`production`や参加者groupには
+付けません。
+
+### 時間配分の目安
+
+| 時間 | 内容 |
+|---|---|
+| 0〜5分 | 接続確認、参加者group、master projectの割り当て確認 |
+| 5〜15分 | Lakebase、branch、Database resourceの説明 |
+| 15〜75分 | App作成、branch、role、resource、Deploy、更新、Tables確認 |
+| 75〜90分 | 完了確認、適用判断、QA |
+
+### 完了確認
+
+参加者ごとに、branch名、更新したticket ID、`production`の同じticketが変わっていない
+ことの3点を回収します。大人数ではチェックフォームまたはチャット投稿を使います。
+未完了の参加者は、接続バッジ、role、resource keyの順に確認します。
+
+### トラブルシューティング
+
+| 症状 | 確認点 | 復旧操作 |
+|---|---|---|
+| SQLite demo modeのまま | Database resourceとDeploy状態 | resourceを追加して再Deploy |
+| `password authentication failed` | 自分のbranchにApp service principalのroleがあるか | App IDのroleを作成 |
+| `permission denied for table tickets` | roleのsuperuserオプション | roleを修正または再作成 |
+| `valueFrom: lakebase-demo`関連のエラー | resource key | keyを`lakebase-demo`へ修正して再Deploy |
+| 全員がbranchを作成できず`CAN CREATE (Inherited)`だけが表示される | 参加者専用groupの権限 | setupを再実行して`CAN MANAGE`を明示的に付与 |
+| SQL Editorを開けない、またはSQL Editorで`permission denied` | 自分のbranchに本人のroleがあるか、`databricks_superuser`が付いているか | 自分のbranchで本人のroleを追加する。Principalの候補で本人がグレーになっている場合はroleがすでにあるので、行の「⋮」→**Edit role**で`databricks_superuser`を付ける |
+
+project権限の`CAN MANAGE`はbranchを作るための権限で、テーブルへのクエリ権限ではありません。
+SQL Editorの問題は`CAN MANAGE`の付け直しでは直りません。
+
+### 片付け
+
+終了後はGit folder内の`lakebase-workshop/notebooks/facilitator_cleanup`を実行します。
+初回は削除対象の一覧だけを表示し、`2. 削除確認`へproject接頭辞を再入力した場合だけ、
+`production`のprotectedを解除してprojectを完全に削除します。削除は取り消せません。
 
 ## ローカルデモ
 

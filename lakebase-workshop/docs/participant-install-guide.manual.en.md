@@ -10,11 +10,13 @@ Client ID the App ID.
 
 ## Initial Deployment
 
-1. Make a separate copy of the `lakebase-workshop` source folder and replace
-   `app.yaml` in that copy with `app.manual.yaml`.
-2. Upload the copied folder containing the replaced `app.yaml` to Workspace.
+1. Add the public repository as a Git folder by following the
+   [standard guide](participant-install-guide.en.md).
+2. Open `lakebase-workshop/app.yaml` in the Git folder, replace its contents with
+   the contents of `app.manual.yaml`, and save it. Keep this change local to the
+   Git folder.
 3. Create a Databricks App.
-4. Click **Deploy** and select the uploaded folder.
+4. Click **Deploy** and select the `lakebase-workshop` folder inside the Git folder.
 5. Open the app and confirm the yellow demo status and three `[DEMO]` tickets.
 6. Note the app service principal Client ID (App ID).
 
